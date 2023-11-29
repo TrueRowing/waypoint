@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ecs"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/hashicorp/go-hclog"
 	"github.com/pkg/errors"
@@ -62,6 +63,13 @@ func (r *Releaser) Release(
 		return &Release{}, nil
 	}
 
+	if target.ServiceArn == "" {
+		// This should never happen in a deploy-release scenario
+		s.Update("Deployment did not provide a service ARN - skipping release.")
+		s.Done()
+		return &Release{}, nil
+	}
+
 	s.Update("Release initialized")
 	s.Done()
 
@@ -73,6 +81,7 @@ func (r *Releaser) Release(
 		return nil, err
 	}
 	elbsrv := elbv2.New(sess)
+	ecssrv := ecs.New(sess)
 
 	var hostname string
 	if r.p.config.ALB != nil && r.p.config.ALB.FQDN != "" {
@@ -136,12 +145,38 @@ func (r *Releaser) Release(
 	}
 
 	s = sg.Add("Checking that all targets are healthy...")
+	// Determine the number of targets
+	var serviceDesiredCount int64
+	serviceDescription, err := ecssrv.DescribeServices(&ecs.DescribeServicesInput{
+		Services: []*string{aws.String(target.ServiceArn)},
+		Cluster:  aws.String(target.Cluster),
+	})
+	if err != nil {
+		log.Error("error getting service description", "err", err.Error())
+		return nil, errors.Wrapf(err, "failed to determine desired number of targets in service %q", target.ServiceArn)
+	}
+	if len(serviceDescription.Services) == 0 {
+		return nil, fmt.Errorf("no services returned by DescribeServices")
+	}
+
+	serviceDesiredCount = *serviceDescription.Services[0].DesiredCount
+
 	targetHealth, err := elbsrv.DescribeTargetHealth(&elbv2.DescribeTargetHealthInput{
 		TargetGroupArn: aws.String(target.TargetGroupArn),
 	})
 	if err != nil {
 		log.Error("error getting target health", "err", err.Error())
 		return nil, errors.Wrapf(err, "failed to describe health of target group with ARN %q", target.TargetGroupArn)
+	}
+
+	targetNumber := int64(len(targetHealth.TargetHealthDescriptions))
+	// Check to see if the number of targets registered in the target group
+	// matches the number desired in the service, and bail if we're not ready
+
+	if targetNumber != serviceDesiredCount {
+		s.Update("Number of targets does not match desired count - skipping release.")
+		s.Done()
+		return nil, errors.Errorf("Number of targets does not match desired count - skipping release.")
 	}
 
 	// Check each target to see if any one of them isn't healthy, before we
