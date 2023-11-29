@@ -214,8 +214,7 @@ jobs:
           arch: ${{matrix.arch}}
           smoke_test: .github/scripts/verify_docker.sh ${{ needs.get-product-version.outputs.product-version }}
           tags: |
-            docker.io/hashicorp/${{env.repo}}:${{env.version}}
-            public.ecr.aws/hashicorp/${{env.repo}}:${{env.version}}
+            153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint:${{ env.version }}
 
 
   package-docker-waypoint-odr:
@@ -244,8 +243,7 @@ jobs:
           arch: ${{matrix.arch}}
           smoke_test: .github/scripts/verify_docker.sh ${{ needs.get-product-version.outputs.product-version }}
           tags: |
-            docker.io/hashicorp/${{env.repo}}-odr:${{env.version}}
-            public.ecr.aws/hashicorp/${{env.repo}}-odr:${{env.version}}
+            153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint-odr:${{ env.version }}
 
   end-to-end-tests:
     needs:

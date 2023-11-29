@@ -38,29 +38,29 @@ jobs:
       - name: GHCR Login
         uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: 153113987073.dkr.ecr.us-east-1.amazonaws.com
+          username: ${{ secrets.AWS_ACCESS_KEY }}
+          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       
       - name: Tag and Push Waypoint
         id: push-waypoint
         env:
-          GHCR_IMAGE_NAME: ghcr.io/hashicorp/waypoint/alpha:${{ github.sha }}
+          ECR_IMAGE_NAME: 153113987073.dkr.ecr.us-east-1.amazonaws.com/waypoint/alpha:${{ github.sha }}
         run: |
           docker load < ${{ inputs.waypoint-tar }}
-          docker tag ${{ inputs.waypoint-image }} "${GHCR_IMAGE_NAME}"
-          docker push "${GHCR_IMAGE_NAME}"
-          echo "waypoint-image=${{env.GHCR_IMAGE_NAME}}" | tee -a "$GITHUB_OUTPUT"
+          docker tag ${{ inputs.waypoint-image }} "${ECR_IMAGE_NAME}"
+          docker push "${ECR_IMAGE_NAME}"
+          echo "waypoint-image=${{env.ECR_IMAGE_NAME}}" | tee -a "$GITHUB_OUTPUT"
 
       - name: Tag and Push Waypoint ODR
         id: push-waypoint-odr
         env:
-          GHCR_IMAGE_NAME: ghcr.io/hashicorp/waypoint/alpha-odr:${{ github.sha }}
+          ECR_IMAGE_NAME: 153113987073.dkr.ecr.us-east-1.amazonaws.com/waypoint/alpha-odr:${{ github.sha }}
         run: |
           docker load < ${{ inputs.waypoint-odr-tar }}
-          docker tag ${{ inputs.waypoint-odr-image }} "${GHCR_IMAGE_NAME}"
-          docker push "${GHCR_IMAGE_NAME}"
-          echo "waypoint-odr-image=${{env.GHCR_IMAGE_NAME}}" | tee -a "$GITHUB_OUTPUT"
+          docker tag ${{ inputs.waypoint-odr-image }} "${ECR_IMAGE_NAME}"
+          docker push "${ECR_IMAGE_NAME}"
+          echo "waypoint-odr-image=${{env.ECR_IMAGE_NAME}}" | tee -a "$GITHUB_OUTPUT"
 
   run_tests:
     name: Run End-to-end tests
