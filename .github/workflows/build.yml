@@ -146,10 +146,8 @@ jobs:
       matrix:
         pkg-name: [ "waypoint", "waypoint-entrypoint" ]
         goos: [ linux ]
-        goarch: [ "386", "amd64", "arm", "arm64" ]
+        goarch: [ "amd64", "arm64" ]
         include:
-          - {goos: "windows", goarch: "386", pkg-name: "waypoint" }
-          - {goos: "windows", goarch: "amd64", pkg-name: "waypoint"}
           - {goos: "darwin", goarch: "arm64", pkg-name: "waypoint"}
           - {goos: "darwin", goarch: "amd64", pkg-name: "waypoint"}
           - { goos: "darwin", goarch: "arm64", pkg-name: "waypoint-entrypoint" }
@@ -201,20 +199,29 @@ jobs:
           cp -v CRT.Dockerfile "$DIR/CRT.Dockerfile"
           unzip -j "archive/waypoint_${{env.version}}_linux_${{ matrix.arch }}.zip" -d "$DIR"
           unzip -j "archive/waypoint-entrypoint_${{env.version}}_linux_${{ matrix.arch }}.zip" -d "$DIR"
-      - name: Build Docker image
-        uses: hashicorp/actions-docker-build@v1
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v5
         with:
-          pkg_name: "waypoint_${{env.version}}"
-          dockerfile: CRT.Dockerfile
-          version: ${{ env.version }}
-          bin_name: ${{ env.repo }}
-          do_zip_extract_step: false
-          workdir: ${{ steps.prepare-zips.outputs.working-dir }}
-          target: crt
-          arch: ${{matrix.arch}}
-          smoke_test: .github/scripts/verify_docker.sh ${{ needs.get-product-version.outputs.product-version }}
+          file: CRT.Dockerfile
+          push: true
+          context: ${{ steps.prepare-zips.outputs.working-dir }}
           tags: |
             153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint:${{ env.version }}
+            
+#       - name: Build Docker image
+#         uses: hashicorp/actions-docker-build@v1
+#         with:
+#           pkg_name: "waypoint_${{env.version}}"
+#           dockerfile: CRT.Dockerfile
+#           version: ${{ env.version }}
+#           bin_name: ${{ env.repo }}
+#           do_zip_extract_step: false
+#           workdir: ${{ steps.prepare-zips.outputs.working-dir }}
+#           target: crt
+#           arch: ${{matrix.arch}}
+#           smoke_test: .github/scripts/verify_docker.sh ${{ needs.get-product-version.outputs.product-version }}
+#           tags: |
+#             153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint:${{ env.version }}
 
 
   package-docker-waypoint-odr:
@@ -233,17 +240,23 @@ jobs:
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - name: Build Docker image
-        uses: hashicorp/actions-docker-build@v1
+        uses: docker/build-push-action@v5
         with:
-          pkg_name: "waypoint_${{env.version}}"
-          dockerfile: CRT.Dockerfile
-          version: ${{ env.version }}
-          bin_name: ${{ env.repo }}
-          target: odr-crt
-          arch: ${{matrix.arch}}
-          smoke_test: .github/scripts/verify_docker.sh ${{ needs.get-product-version.outputs.product-version }}
+          file: CRT/Dockerfile
+          push: true
           tags: |
-            153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint-odr:${{ env.version }}
+            153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint:${{ env.version }}
+#        uses: hashicorp/actions-docker-build@v1
+#        with:
+#          pkg_name: "waypoint_${{env.version}}"
+#          dockerfile: CRT.Dockerfile
+#          version: ${{ env.version }}
+#          bin_name: ${{ env.repo }}
+#          target: odr-crt
+#          arch: ${{matrix.arch}}
+#          smoke_test: .github/scripts/verify_docker.sh ${{ needs.get-product-version.outputs.product-version }}
+#          tags: |
+#            153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint-odr:${{ env.version }}
 
   end-to-end-tests:
     needs:
@@ -254,8 +267,10 @@ jobs:
     with:
       waypoint-binary: waypoint_${{needs.get-product-version.outputs.product-version}}_linux_amd64.zip
       waypoint-tar: waypoint_crt_linux_amd64_${{needs.get-product-version.outputs.product-version}}_${{github.sha}}.docker.tar
-      waypoint-image: waypoint:${{ needs.get-product-version.outputs.product-version }}
+      # waypoint-image: waypoint:${{ needs.get-product-version.outputs.product-version }}
+      waypoint-image: 153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint:${{ env.version }}
       waypoint-odr-tar: waypoint_odr-crt_linux_amd64_${{needs.get-product-version.outputs.product-version}}_${{github.sha}}.docker.tar
-      waypoint-odr-image: waypoint-odr:${{ needs.get-product-version.outputs.product-version }}
+      # waypoint-odr-image: waypoint-odr:${{ needs.get-product-version.outputs.product-version }}
+      waypoint-odr-image: 153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint-odr:${{ env.version }}
     secrets: inherit
 
