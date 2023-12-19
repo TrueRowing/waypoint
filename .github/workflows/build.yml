@@ -268,9 +268,9 @@ jobs:
       waypoint-binary: waypoint_${{needs.get-product-version.outputs.product-version}}_linux_amd64.zip
       waypoint-tar: waypoint_crt_linux_amd64_${{needs.get-product-version.outputs.product-version}}_${{github.sha}}.docker.tar
       # waypoint-image: waypoint:${{ needs.get-product-version.outputs.product-version }}
-      waypoint-image: 153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint:${{ env.version }}
+      waypoint-image: 153113987073.dkr.ecr.us-east-1.amazonaws.com/waypoint/waypoint:0.11.4
       waypoint-odr-tar: waypoint_odr-crt_linux_amd64_${{needs.get-product-version.outputs.product-version}}_${{github.sha}}.docker.tar
       # waypoint-odr-image: waypoint-odr:${{ needs.get-product-version.outputs.product-version }}
-      waypoint-odr-image: 153113987073.dkr.ecr.us-east-1.amazonaws.com/${{env.repo}}/waypoint-odr:${{ env.version }}
+      waypoint-odr-image: 153113987073.dkr.ecr.us-east-1.amazonaws.com/waypoint/waypoint-odr:0.11.4
     secrets: inherit
 
